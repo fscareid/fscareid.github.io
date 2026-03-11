@@ -1,0 +1,53 @@
+name: Deploy Web Tuan Tampan
+on:
+  push:
+    branches: ["main"]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - name: Install Modul
+        run: npm install --force
+        
+      - name: Setting Kompas Folder & Tendang Bug
+        run: |
+          cat << 'EOF' > vite.config.ts
+          import { defineConfig } from 'vite'
+          import react from '@vitejs/plugin-react'
+          export default defineConfig({
+            plugins: [react()],
+            base: './',
+            build: {
+              rollupOptions: {
+                external: [/^figma:asset.*/]
+              }
+            }
+          })
+          EOF
+          
+      - name: Rakit Tanpa Ampun
+        env:
+          CI: false
+        run: npx vite build
+        
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+          
+      - id: deployment
+        uses: actions/deploy-pages@v4
